@@ -1,0 +1,18 @@
+{
+  "name": "wmtstest",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "vite",
+    "build": "vite build",
+    "serve": "vite preview",
+    "generate-client": "openapi --input http://localhost:8092/api/v1/openapi.json --output ./src/client --useOptions --useUnionTypes"
+  },
+  "devDependencies": {
+    "openapi-typescript-codegen": "^0.27.0",
+    "typescript": "^5.4.2",
+    "vite": "^5.1.4"
+  },
+  "dependencies": {
+    "ol": "latest"
+  }
+}
