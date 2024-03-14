@@ -7,7 +7,7 @@ import WMTS, { optionsFromCapabilities } from "ol/source/WMTS";
 import WMTSCapabilities from "ol/format/WMTSCapabilities";
 
 import { OpenAPI, DefaultService } from "./client";
-OpenAPI.BASE = "http://points-air.ecolingui.ca/api/v1"
+OpenAPI.BASE = "https://points-air.ecolingui.ca/api/v1"
 // For debugging (avoid CORS issues)
 // OpenAPI.BASE = "http://localhost:8092/api/v1"
 
