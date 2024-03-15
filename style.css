@@ -22,4 +22,10 @@ html, body {
 }
 #map {
     flex: 100%;
+    position: relative
+}
+#locate {
+    top: 4em;
+    left: .5em;
+    z-index: 1;
 }
