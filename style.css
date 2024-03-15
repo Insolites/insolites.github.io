@@ -19,6 +19,14 @@ html, body {
 #info {
     flex: 15em;
     padding: 2px;
+    display: flex;
+    flex-flow: row;
+}
+#activites {
+    flex: 1;
+}
+#palmares {
+    flex: 1;
 }
 #map {
     flex: 100%;

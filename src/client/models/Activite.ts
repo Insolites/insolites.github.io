@@ -18,7 +18,7 @@ export type Activite = {
     /**
      * Date de début de l'activité
      */
-    date: string;
+    date?: string;
     /**
      * L'activité est-elle confirmée?
      */

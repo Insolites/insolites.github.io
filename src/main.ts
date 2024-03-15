@@ -1,11 +1,10 @@
 import { Feature, Map, View } from "ol";
-import { fromLonLat } from "ol/proj";
+import { fromLonLat, toLonLat } from "ol/proj";
 import { Source, Vector as VectorSource } from "ol/source";
 import { Tile as TileLayer, Vector as VectorLayer } from "ol/layer.js";
 import { GeoJSON } from "ol/format";
 import { Control } from "ol/control";
 import { defaults } from "ol/control/defaults";
-import { circular } from "ol/geom/Polygon";
 import WMTS, { optionsFromCapabilities } from "ol/source/WMTS";
 import WMTSCapabilities from "ol/format/WMTSCapabilities";
 
@@ -15,7 +14,13 @@ OpenAPI.BASE = "https://points-air.ecolingui.ca/api/stable";
 // For debugging (avoid CORS issues)
 // OpenAPI.BASE = "http://localhost:8092/api/v1";
 
-const repentignyLonLat = [-73.431657, 45.76838];
+let map: Map;
+const geoj = new GeoJSON();
+const geojOpts = {
+  featureProjection: "EPSG:3857",
+};
+const plateauxSource = new VectorSource();
+const geolocSource = new VectorSource();
 
 window.addEventListener("load", initApp);
 
@@ -37,6 +42,48 @@ async function makeTiles() {
   });
 }
 
+async function updateActivities(): Promise<void> {
+  const view = map.getView();
+  const center = view.getCenter();
+  if (center === undefined)
+    throw "WTF map has no center";
+  const [longitude, latitude] = toLonLat(center);
+  const r = await DefaultService.activWgs84PlateauxLatitudeLongitudeGet({
+    latitude, longitude, geometrie: true
+  });
+  geolocSource.clear(true);
+  const point = new Feature(new Point(center));
+  geolocSource.addFeature(point);
+  plateauxSource.clear();
+  plateauxSource.addFeatures(r.map(([_, p]) => geoj.readFeature(p.feature, geojOpts)));
+  const target = document.getElementById("activites");
+  if (target === null)
+    throw "WTF no target";
+  target.innerHTML = "";
+  const ul = document.createElement("ul");
+  for (const [dist, p] of r) {
+    const li = document.createElement("li");
+    li.innerHTML = `${p.nom} (${dist.toFixed(0)}m)`;
+    ul.appendChild(li);
+  }
+  target.appendChild(ul);
+}
+
+async function updatePalmares(): Promise<void> {
+  const p = await DefaultService.palmaresPalmaresGet();
+  const target = document.getElementById("palmares");
+  if (target === null)
+    throw "WTF no target";
+  target.innerHTML = "";
+  const ul = document.createElement("ul");
+  for (const {score, ville} of p) {
+    const li = document.createElement("li");
+    li.innerHTML = `${ville}: ${score}`;
+    ul.appendChild(li);
+  }
+  target.appendChild(ul);
+}
+
 function getCurrentPosition(): Promise<GeolocationPosition> {
   return new Promise((resolve, reject) => {
     const options = {
@@ -48,38 +95,25 @@ function getCurrentPosition(): Promise<GeolocationPosition> {
 
 async function geolocateMe(map: Map, source: VectorSource) {
   const pos = await getCurrentPosition();
-  const coords = [pos.coords.longitude, pos.coords.latitude];
-  const accuracy = circular(coords, pos.coords.accuracy);
+  const position = [pos.coords.longitude, pos.coords.latitude];
   source.clear(true);
   source.addFeatures([
-    //new Feature(accuracy.transform("EPSG:4326", map.getView().getProjection())),
-    new Feature(new Point(fromLonLat(coords))),
+    new Feature(new Point(fromLonLat(position))),
   ]);
   map.getView().fit(source.getExtent(), {
     maxZoom: 16,
     duration: 500,
   });
+  updateActivities()
 }
 
 async function initApp() {
-  const plateaux = await DefaultService.activVillePlateauxVilleGet({
-    ville: "ville-de-repentigny",
-    geometrie: true,
-  });
-  const geoj = new GeoJSON();
-  const geojOpts = {
-    featureProjection: "EPSG:3857",
-  };
-  const plateauxSource = new VectorSource({
-    features: plateaux.map((p) => geoj.readFeature(p.feature, geojOpts)),
-  });
   const plateauxLayer = new VectorLayer({
     source: plateauxSource,
   });
   const tileLayer = await makeTiles();
   const locate = document.getElementById("locate");
   if (locate === null) throw "Impossible de trouver element locate";
-  const geolocSource = new VectorSource();
   const geolocLayer = new VectorLayer({
     source: geolocSource,
   });
@@ -90,13 +124,16 @@ async function initApp() {
       element: locate,
     }),
   ]);
-  const map = new Map({
+  map = new Map({
     target: "map",
     layers: [tileLayer, plateauxLayer, geolocLayer],
     view: new View({
-      center: fromLonLat(repentignyLonLat),
+      center: fromLonLat([-73.431657, 45.76838]),
       zoom: 14,
     }),
   });
   locate.addEventListener("click", () => geolocateMe(map, geolocSource));
+  map.on("moveend", updateActivities);
+  updateActivities();
+  updatePalmares();
 }

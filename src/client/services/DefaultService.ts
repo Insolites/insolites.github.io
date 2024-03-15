@@ -120,7 +120,7 @@ export class DefaultService {
         latitude,
         longitude,
         proximite = 10,
-        limit = 10,
+        limite = 10,
         geometrie = false,
     }: {
         latitude: number,
@@ -132,7 +132,7 @@ export class DefaultService {
         /**
          * Nombre maximal de plateaux à retourner
          */
-        limit?: number,
+        limite?: number,
         /**
          * Retourner perimètre en GeoJSON
          */
@@ -147,7 +147,7 @@ export class DefaultService {
             },
             query: {
                 'proximite': proximite,
-                'limit': limit,
+                'limite': limite,
                 'geometrie': geometrie,
             },
             errors: {
@@ -161,11 +161,14 @@ export class DefaultService {
      * @returns Plateau Successful Response
      * @throws ApiError
      */
-    public static activVillePlateauxVilleGet({
+    public static plateauParVillePlateauxVilleGet({
         ville,
         geometrie = false,
     }: {
         ville: string,
+        /**
+         * Retourner perimètre en GeoJSON
+         */
         geometrie?: boolean,
     }): CancelablePromise<Array<Plateau>> {
         return __request(OpenAPI, {
@@ -173,6 +176,36 @@ export class DefaultService {
             url: '/plateaux/{ville}',
             path: {
                 'ville': ville,
+            },
+            query: {
+                'geometrie': geometrie,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * Plateau par identificateur
+     * Localiser des activités par ville
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static plateauParIdPlateauIdGet({
+        id,
+        geometrie = false,
+    }: {
+        id: string,
+        /**
+         * Retourner perimètre en GeoJSON
+         */
+        geometrie?: boolean,
+    }): CancelablePromise<(Plateau | null)> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/plateau/{id}',
+            path: {
+                'id': id,
             },
             query: {
                 'geometrie': geometrie,
@@ -300,12 +333,17 @@ export class DefaultService {
      */
     public static putUserUserPut({
         requestBody,
+        statusCode = 201,
     }: {
         requestBody: Utilisateur,
+        statusCode?: number,
     }): CancelablePromise<Utilisateur> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/user',
+            query: {
+                'status_code': statusCode,
+            },
             body: requestBody,
             mediaType: 'application/json',
             errors: {
@@ -319,16 +357,38 @@ export class DefaultService {
      * @returns any Successful Response
      * @throws ApiError
      */
-    public static getUserUserIdGet({
+    public static getUserIdUseridIdGet({
         id,
     }: {
         id: string,
     }): CancelablePromise<(Utilisateur | null)> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/user/{id}',
+            url: '/userid/{id}',
             path: {
                 'id': id,
+            },
+            errors: {
+                422: `Validation Error`,
+            },
+        });
+    }
+    /**
+     * utilisateur par nom
+     * Recherche d'un utilisateur
+     * @returns any Successful Response
+     * @throws ApiError
+     */
+    public static getUserNomUserNomGet({
+        nom,
+    }: {
+        nom: string,
+    }): CancelablePromise<(Utilisateur | null)> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/user/{nom}',
+            path: {
+                'nom': nom,
             },
             errors: {
                 422: `Validation Error`,
